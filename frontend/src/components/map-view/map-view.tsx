@@ -11,6 +11,7 @@ import styles from "./map-view.module.css";
 
 const SOURCE_ID = "jobs";
 const LAYER_ID = "jobs-dots";
+const SHOULD_LOAD_DATA_ON_INITIAL_PAGE_LOAD = false;
 
 const EMPTY_FEATURE_COLLECTION: GeoJSONFeatureCollection = {
   type: "FeatureCollection",
@@ -106,7 +107,11 @@ export default function MapView() {
         }
       };
 
-      await loadData();
+      if (SHOULD_LOAD_DATA_ON_INITIAL_PAGE_LOAD) {
+        await loadData();
+      } else {
+        setHasPendingAreaSearch(true);
+      }
 
       map.on("moveend", () => {
         setHasPendingAreaSearch(true);
