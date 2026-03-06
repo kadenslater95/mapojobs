@@ -1,13 +1,67 @@
 @import "maplibre-gl/dist/maplibre-gl.css";
 
+.container {
+  position: relative;
+}
 
 .map {
   height: 100vh;
   width: 100%;
 }
 
+.searchAreaButton {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  border: none;
+  border-radius: 999px;
+  background: #12a8df;
+  color: #222223;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+  cursor: pointer;
+}
+
+.searchAreaButton:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
+.status,
+.error {
+  position: absolute;
+  left: 1rem;
+  z-index: 1;
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.9rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+.status {
+  bottom: 1rem;
+  background: rgba(255, 255, 255, 0.94);
+  color: #111827;
+}
+
+.error {
+  bottom: 4.25rem;
+  max-width: min(32rem, calc(100% - 2rem));
+  background: rgba(254, 242, 242, 0.96);
+  color: #991b1b;
+}
+
 @media (max-width: 600px) {
   .map {
     height: 100dvh;
+  }
+
+  .searchAreaButton {
+    top: 0.75rem;
+    width: calc(100% - 2rem);
   }
 }

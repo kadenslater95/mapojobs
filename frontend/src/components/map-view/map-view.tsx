@@ -24,6 +24,7 @@ export default function MapView() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasPendingAreaSearch, setHasPendingAreaSearch] = useState(false);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -53,6 +54,8 @@ export default function MapView() {
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
     map.on("load", async () => {
+      let isFetching = false;
+
       map.addSource(SOURCE_ID, {
         type: "geojson",
         data: EMPTY_FEATURE_COLLECTION,
@@ -80,7 +83,10 @@ export default function MapView() {
       });
 
       const loadData = async () => {
+        if (isFetching) return;
+
         try {
+          isFetching = true;
           setLoading(true);
           setError(null);
 
@@ -89,18 +95,22 @@ export default function MapView() {
 
           const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
           source?.setData(data);
+          setHasPendingAreaSearch(false);
         } catch (err) {
           const message =
             err instanceof Error ? err.message : "Unknown error loading jobs";
           setError(message);
         } finally {
+          isFetching = false;
           setLoading(false);
         }
       };
 
       await loadData();
 
-      map.on("moveend", loadData);
+      map.on("moveend", () => {
+        setHasPendingAreaSearch(true);
+      });
 
       map.on("click", LAYER_ID, (e) => {
         const feature = e.features?.[0];
@@ -118,7 +128,7 @@ export default function MapView() {
         new maplibregl.Popup()
           .setLngLat((feature.geometry as GeoJSON.Point).coordinates as [number, number])
           .setHTML(`
-            <div style="min-width: 220px;">
+            <div style="min-width: 220px; background-color: #ccc; color: #000;">
               <strong>${props.companyName}</strong><br />
               ${props.city}, ${props.state}<br />
               Jobs: ${props.jobCount}<br />
@@ -143,10 +153,43 @@ export default function MapView() {
     };
   }, []);
 
+  const handleSearchThisArea = async () => {
+    const map = mapRef.current;
+    if (!map || loading) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const bounds = toBoundsObject(map.getBounds());
+      const data = await fetchJobsForBounds(bounds);
+
+      const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
+      source?.setData(data);
+      setHasPendingAreaSearch(false);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Unknown error loading jobs";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   
   return (
     <div className={styles.container}>
       <div ref={mapContainerRef} className={styles.map} />
+      {hasPendingAreaSearch ? (
+        <button
+          type="button"
+          className={styles.searchAreaButton}
+          onClick={handleSearchThisArea}
+          disabled={loading}
+        >
+          Search This Area
+        </button>
+      ) : null}
       {loading ? <div className={styles.status}>Loading jobs...</div> : null}
       {error ? <div className={styles.error}>{error}</div> : null}
     </div>
