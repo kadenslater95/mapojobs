@@ -26,7 +26,7 @@ export default function MapView() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!mapContainerRef.current || !mapRef.current) return;
+    if (!mapContainerRef.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
@@ -138,21 +138,17 @@ export default function MapView() {
     });
 
     return () => {
+      mapRef.current = null;
       map.remove();
     };
   }, []);
 
-  if(loading) {
-    return (
-      <div>LOADING . . .</div>
-    );
-  }
-
-  if(error) {
-    return (
-      <div>{error}</div>
-    );
-  }
-
-  return <div ref={mapContainerRef} className={styles.map} />;
+  
+  return (
+    <div className={styles.container}>
+      <div ref={mapContainerRef} className={styles.map} />
+      {loading ? <div className={styles.status}>Loading jobs...</div> : null}
+      {error ? <div className={styles.error}>{error}</div> : null}
+    </div>
+  );
 }
