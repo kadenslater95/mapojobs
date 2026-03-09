@@ -21,5 +21,28 @@ services:
       timeout: 5s
       retries: 20
 
+  seed_tiger:
+    image: postgis/postgis:16-3.4
+    container_name: mapojobs-seed-tiger
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mapojobs}
+      POSTGRES_USER: ${POSTGRES_USER:-mapojobs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: db
+      DB_PORT: "${POSTGRES_PORT:-5432}:5432"
+      TIGER_YEAR: 2025
+      DATA_DIR: /workspace/data/tiger_counties
+      TABLE_NAME: public.us_counties
+    volumes:
+      - ./data/tiger_counties:/workspace/data/tiger_counties
+      - ./data/tiger_states:/workspace/data/tiger_states
+      - ./scripts:/workspace/scripts:ro
+    working_dir: /workspace
+    command: ["/bin/bash", "/workspace/scripts/seed_tiger_data.sh"]
+    restart: "no"
+
 volumes:
   mapojobs_pgdata:
