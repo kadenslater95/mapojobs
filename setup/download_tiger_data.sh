@@ -2,10 +2,28 @@
 set -euo pipefail
 
 TIGER_YEAR="${TIGER_YEAR:-2025}"
-DATA_DIR="${DATA_DIR:-./data/tiger_counties}"
-BASENAME="tl_${TIGER_YEAR}_us_county"
+TIGER_GEOGRAPHY="${TIGER_GEOGRAPHY:-county}"
+
+case "$TIGER_GEOGRAPHY" in
+  county)
+    DEFAULT_DATA_DIR="./data/tiger_counties"
+    TIGER_FOLDER="COUNTY"
+    ;;
+  state)
+    DEFAULT_DATA_DIR="./data/tiger_states"
+    TIGER_FOLDER="STATE"
+    ;;
+  *)
+    echo "Unsupported TIGER_GEOGRAPHY value: $TIGER_GEOGRAPHY" >&2
+    echo "Supported options: county, state" >&2
+    exit 1
+    ;;
+esac
+
+DATA_DIR="${DATA_DIR:-${DEFAULT_DATA_DIR}}"
+BASENAME="tl_${TIGER_YEAR}_us_${TIGER_GEOGRAPHY}"
 ZIP_NAME="${BASENAME}.zip"
-ZIP_URL="https://www2.census.gov/geo/tiger/TIGER${TIGER_YEAR}/COUNTY/${ZIP_NAME}"
+ZIP_URL="https://www2.census.gov/geo/tiger/TIGER${TIGER_YEAR}/${TIGER_FOLDER}/${ZIP_NAME}"
 
 mkdir -p "$DATA_DIR"
 
@@ -25,7 +43,7 @@ for file in "${required_files[@]}"; do
 done
 
 if [ "$all_present" = true ]; then
-  echo "TIGER county shapefile already present in ${DATA_DIR}"
+  echo "TIGER ${TIGER_GEOGRAPHY} shapefile already present in ${DATA_DIR}"
   exit 0
 fi
 
@@ -39,4 +57,4 @@ unzip -o "$tmp_zip" -d "$DATA_DIR"
 
 rm -f "$tmp_zip"
 
-echo "County TIGER files are ready."
+echo "${TIGER_GEOGRAPHY^} TIGER files are ready."

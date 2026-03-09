@@ -8,16 +8,34 @@ DB_USER="${POSTGRES_USER:-postgres}"
 DB_PASSWORD="${POSTGRES_PASSWORD:-devpassword}"
 
 TIGER_YEAR="${TIGER_YEAR:-2025}"
-DATA_DIR="${DATA_DIR:-./data/tiger_counties}"
-BASENAME="tl_${TIGER_YEAR}_us_county"
+TIGER_GEOGRAPHY="${TIGER_GEOGRAPHY:-county}"
+
+case "$TIGER_GEOGRAPHY" in
+  county)
+    DEFAULT_DATA_DIR="./data/tiger_counties"
+    DEFAULT_TABLE_NAME="public.us_counties"
+    ;;
+  state)
+    DEFAULT_DATA_DIR="./data/tiger_states"
+    DEFAULT_TABLE_NAME="public.us_states"
+    ;;
+  *)
+    echo "Unsupported TIGER_GEOGRAPHY value: $TIGER_GEOGRAPHY" >&2
+    echo "Supported options: county, state" >&2
+    exit 1
+    ;;
+esac
+
+DATA_DIR="${DATA_DIR:-${DEFAULT_DATA_DIR}}"
+TABLE_NAME="${TABLE_NAME:-${DEFAULT_TABLE_NAME}}"
+BASENAME="tl_${TIGER_YEAR}_us_${TIGER_GEOGRAPHY}"
 SHP_PATH="${DATA_DIR}/${BASENAME}.shp"
-TABLE_NAME="${TABLE_NAME:-public.us_counties}"
 
 export PGPASSWORD="$DB_PASSWORD"
 
 if [ ! -f "$SHP_PATH" ]; then
   echo "Missing shapefile: $SHP_PATH"
-  echo "Run ensure_tiger_counties.sh first."
+  echo "Run download_tiger_data.sh with TIGER_GEOGRAPHY=${TIGER_GEOGRAPHY} first."
   exit 1
 fi
 
@@ -44,4 +62,4 @@ echo "Importing ${SHP_PATH} into ${TABLE_NAME}..."
 shp2pgsql -I -s 4269:4326 "$SHP_PATH" "$TABLE_NAME" | \
   psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1
 
-echo "County import complete."
+echo "${TIGER_GEOGRAPHY^} import complete."
